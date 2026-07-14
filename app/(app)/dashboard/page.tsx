@@ -1,4 +1,3 @@
-import Link from "next/link";
 import {
   ActionIcon,
   Badge,
@@ -85,7 +84,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             <Badge variant="light" color="gray">
               {qrCodes.length} shown
             </Badge>
-            <Button component={Link} href="/qr/new" leftSection={<Icon name="plus" className="h-4 w-4" />}>
+            <Button component="a" href="/qr/new" leftSection={<Icon name="plus" className="h-4 w-4" />}>
               New QR code
             </Button>
           </Group>
@@ -141,7 +140,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                   </Box>
                   <Box miw={0}>
                     <Group gap="xs" wrap="nowrap">
-                      <Text component={Link} href={`/qr/${qr.id}`} fw={700} c="dark.8" truncate className="plain-link">
+                      <Text component="a" href={`/qr/${qr.id}`} fw={700} c="dark.8" truncate className="plain-link">
                         {qr.label}
                       </Text>
                       <Badge size="sm" color={qr.status === "ACTIVE" ? "green" : "gray"} variant="light">
@@ -170,10 +169,10 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                 </Group>
 
                 <Group gap="xs" justify="flex-end">
-                  <Button component={Link} href={`/qr/${qr.id}`} variant="default" size="xs" leftSection={<Icon name="externalLink" className="h-3.5 w-3.5" />}>
+                  <Button component="a" href={`/qr/${qr.id}`} variant="default" size="xs" leftSection={<Icon name="externalLink" className="h-3.5 w-3.5" />}>
                     Open
                   </Button>
-                  <ActionIcon component={Link} href={`/qr/${qr.id}/edit`} variant="subtle" color="gray" aria-label={`Edit ${qr.label}`}>
+                  <ActionIcon component="a" href={`/qr/${qr.id}/edit`} variant="subtle" color="gray" aria-label={`Edit ${qr.label}`}>
                     <Icon name="edit" className="h-4 w-4" />
                   </ActionIcon>
                   <form action={cloneQrCode.bind(null, qr.id)}>
@@ -207,7 +206,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             <Text c="dimmed" mt="xs">
               Adjust the filters or create a new dynamic code.
             </Text>
-            <Button component={Link} href="/qr/new" mt="md" leftSection={<Icon name="plus" className="h-4 w-4" />}>
+            <Button component="a" href="/qr/new" mt="md" leftSection={<Icon name="plus" className="h-4 w-4" />}>
               Create QR code
             </Button>
           </Paper>

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   Badge,
@@ -61,7 +60,7 @@ export default async function QrDetailPage({ params }: { params: Promise<{ id: s
                 </Text>
               </Box>
               <Group gap="sm">
-                <Button component={Link} href={`/qr/${qr.id}/edit`} variant="default" leftSection={<Icon name="edit" className="h-4 w-4" />}>
+                <Button component="a" href={`/qr/${qr.id}/edit`} variant="default" leftSection={<Icon name="edit" className="h-4 w-4" />}>
                   Edit
                 </Button>
                 <form action={cloneQrCode.bind(null, qr.id)}>
