@@ -67,7 +67,13 @@ WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = :'app_user') \gexec
 SELECT format('ALTER ROLE %I LOGIN PASSWORD %L', :'app_user', :'app_password') \gexec
 SQL
 
-db_exists=$(gosu postgres "$POSTGRES_BIN/psql" -h /run/postgresql -p "$POSTGRES_PORT" -U postgres -d postgres -v app_db="$POSTGRES_DB" -tAc "SELECT 1 FROM pg_database WHERE datname = :'app_db'")
+db_exists=$(gosu postgres "$POSTGRES_BIN/psql" -h /run/postgresql -p "$POSTGRES_PORT" -U postgres -d postgres \
+  -v app_db="$POSTGRES_DB" \
+  -v ON_ERROR_STOP=1 \
+  -tA <<'SQL'
+SELECT 1 FROM pg_database WHERE datname = :'app_db';
+SQL
+)
 if [ "$db_exists" != "1" ]; then
   gosu postgres "$POSTGRES_BIN/createdb" -h /run/postgresql -p "$POSTGRES_PORT" -U postgres -O "$POSTGRES_USER" "$POSTGRES_DB"
 fi
