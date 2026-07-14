@@ -1,6 +1,9 @@
 "use client";
 
+import { Checkbox, Select, TextInput } from "@mantine/core";
 import type { QrTypeValue } from "@/lib/qr-content";
+
+type FieldInputProps = Pick<React.ComponentProps<typeof TextInput>, "type" | "placeholder" | "required">;
 
 export function ContentFields({
   type,
@@ -15,18 +18,15 @@ export function ContentFields({
     name: string,
     label: string,
     formName: string,
-    props: React.InputHTMLAttributes<HTMLInputElement> = {}
+    props: FieldInputProps = {}
   ) => (
-    <div className="flex flex-col gap-1.5">
-      <label className="ui-label">{label}</label>
-      <input
-        name={formName}
-        value={fields[name] ?? ""}
-        onChange={(e) => setField(name, e.target.value)}
-        className="ui-input"
-        {...props}
-      />
-    </div>
+    <TextInput
+      label={label}
+      name={formName}
+      value={fields[name] ?? ""}
+      onChange={(event) => setField(name, event.currentTarget.value)}
+      {...props}
+    />
   );
 
   switch (type) {
@@ -53,28 +53,18 @@ export function ContentFields({
         <>
           {input("ssid", "Network name (SSID)", "content_ssid", { required: true })}
           {input("password", "Password", "content_password", { type: "password" })}
-          <div className="flex flex-col gap-1.5">
-            <label className="ui-label">Encryption</label>
-            <select
-              name="content_encryption"
-              value={fields.encryption ?? "WPA"}
-              onChange={(e) => setField("encryption", e.target.value)}
-              className="ui-select"
-            >
-              <option value="WPA">WPA/WPA2</option>
-              <option value="WEP">WEP</option>
-              <option value="nopass">Open (no password)</option>
-            </select>
-          </div>
-          <label className="flex items-center gap-2 text-sm font-medium text-neutral-700">
-            <input
-              type="checkbox"
-              name="content_hidden"
-              defaultChecked={fields.hidden === "true"}
-              className="ui-checkbox"
-            />
-            Hidden network
-          </label>
+          <Select
+            label="Encryption"
+            name="content_encryption"
+            value={fields.encryption ?? "WPA"}
+            onChange={(value) => setField("encryption", value ?? "WPA")}
+            data={[
+              { value: "WPA", label: "WPA/WPA2" },
+              { value: "WEP", label: "WEP" },
+              { value: "nopass", label: "Open (no password)" },
+            ]}
+          />
+          <Checkbox name="content_hidden" defaultChecked={fields.hidden === "true"} label="Hidden network" mt={26} />
         </>
       );
     case "VCARD":

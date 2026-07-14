@@ -1,5 +1,20 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import {
+  Badge,
+  Box,
+  Button,
+  Card,
+  Code,
+  Divider,
+  Grid,
+  Group,
+  SimpleGrid,
+  Stack,
+  Text,
+  ThemeIcon,
+  Title,
+} from "@mantine/core";
 import { prisma } from "@/lib/prisma";
 import { QrPreview } from "@/components/qr-preview";
 import { Icon, type IconName } from "@/components/ui-icons";
@@ -15,7 +30,7 @@ export default async function QrDetailPage({ params }: { params: Promise<{ id: s
 
   const style = styleConfigSchema.parse(qr.styleConfig);
   const redirectBase = process.env.NEXT_PUBLIC_REDIRECT_BASE_URL ?? "";
-  const trackingUrl = `${redirectBase}/q/${qr.shortcode}`;
+  const trackingUrl = `${redirectBase}/q/${qr.slug}`;
 
   const [summary, series, breakdown] = await Promise.all([
     getScanSummary(qr.id),
@@ -24,201 +39,209 @@ export default async function QrDetailPage({ params }: { params: Promise<{ id: s
   ]);
 
   return (
-    <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_24rem]">
-      <div className="space-y-6">
-        <section className="ui-page-header p-5 sm:p-6">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="ui-page-eyebrow">QR detail</p>
-                <span className={qr.status === "ACTIVE" ? "ui-badge" : "ui-badge ui-badge-muted"}>
-                  {qr.status.toLowerCase()}
-                </span>
-              </div>
-              <h1 className="ui-title mt-2">{qr.label}</h1>
-              <p className="ui-description mt-3 max-w-2xl">
-                Review the destination, export print assets, and monitor scans for this dynamic code.
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2 text-sm">
-              <Link href={`/qr/${qr.id}/edit`} className="ui-button ui-button-surface">
-                <Icon name="edit" className="h-4 w-4" />
-                Edit
-              </Link>
-              <form action={cloneQrCode.bind(null, qr.id)}>
-                <button type="submit" className="ui-button ui-button-surface">
-                  <Icon name="clone" className="h-4 w-4" />
-                  Clone
-                </button>
-              </form>
-              <form action={setQrStatus.bind(null, qr.id, qr.status === "ACTIVE" ? "ARCHIVED" : "ACTIVE")}>
-                <button type="submit" className="ui-button ui-button-surface">
-                  <Icon name="archive" className="h-4 w-4" />
-                  {qr.status === "ACTIVE" ? "Archive" : "Unarchive"}
-                </button>
-              </form>
-            </div>
-          </div>
-        </section>
+    <Grid gap="lg" align="flex-start">
+      <Grid.Col span={{ base: 12, xl: 8 }}>
+        <Stack gap="lg">
+          <Card p="lg">
+            <Group justify="space-between" align="flex-start" gap="md">
+              <Box>
+                <Group gap="xs" mb={4}>
+                  <Text size="xs" fw={800} tt="uppercase" c="dimmed" lts="0.08em">
+                    QR detail
+                  </Text>
+                  <Badge color={qr.status === "ACTIVE" ? "green" : "gray"} variant="light">
+                    {qr.status.toLowerCase()}
+                  </Badge>
+                </Group>
+                <Title order={1} size="h2">
+                  {qr.label}
+                </Title>
+                <Text c="dimmed" mt="xs" maw={760}>
+                  Review the destination, export print assets, and monitor scan activity for this dynamic code.
+                </Text>
+              </Box>
+              <Group gap="sm">
+                <Button component={Link} href={`/qr/${qr.id}/edit`} variant="default" leftSection={<Icon name="edit" className="h-4 w-4" />}>
+                  Edit
+                </Button>
+                <form action={cloneQrCode.bind(null, qr.id)}>
+                  <Button type="submit" variant="default" leftSection={<Icon name="clone" className="h-4 w-4" />}>
+                    Clone
+                  </Button>
+                </form>
+                <form action={setQrStatus.bind(null, qr.id, qr.status === "ACTIVE" ? "ARCHIVED" : "ACTIVE")}>
+                  <Button type="submit" variant="default" leftSection={<Icon name="archive" className="h-4 w-4" />}>
+                    {qr.status === "ACTIVE" ? "Archive" : "Unarchive"}
+                  </Button>
+                </form>
+              </Group>
+            </Group>
+          </Card>
 
-        <section className="ui-card p-5">
-          <div className="ui-section-title">
-            <span className="ui-section-icon">
-              <Icon name="shield" className="h-4 w-4" />
-            </span>
-            <div>
-              <h2 className="ui-heading">Code settings</h2>
-              <p className="ui-description mt-1">Operational details for this printed asset.</p>
-            </div>
-          </div>
-          <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-2">
-            <DetailItem icon="qr" label="Type" value={qr.type} />
-            <DetailItem icon="scan" label="Status" value={qr.status} />
-            <DetailItem icon="link" label="Tracking link" value={trackingUrl} wide mono />
-            <DetailItem icon="externalLink" label="Destination" value={qr.destinationUrl} wide />
+          <Card p="lg">
+            <Group gap="xs" mb="md">
+              <ThemeIcon variant="light" color="blue" radius="md">
+                <Icon name="shield" className="h-4 w-4" />
+              </ThemeIcon>
+              <Box>
+                <Title order={3} size="h4">
+                  Code settings
+                </Title>
+                <Text size="sm" c="dimmed">
+                  Operational details for this printed asset.
+                </Text>
+              </Box>
+            </Group>
+
+            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+              <DetailItem icon="qr" label="Type" value={qr.type} />
+              <DetailItem icon="scan" label="Status" value={qr.status} />
+              <DetailItem icon="link" label="Tracking link" value={trackingUrl} wide mono />
+              <DetailItem icon="externalLink" label="Destination" value={qr.destinationUrl} wide />
+            </SimpleGrid>
+
             {qr.tags.length > 0 ? (
-              <div className="ui-card-subtle p-4 sm:col-span-2">
-                <dt className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-[var(--muted)]">
-                  <Icon name="tag" className="h-3.5 w-3.5" />
-                  Tags
-                </dt>
-                <dd className="mt-2 flex flex-wrap gap-2">
-                  {qr.tags.map((tag) => (
-                    <span key={tag} className="ui-badge ui-badge-muted">
-                      {tag}
-                    </span>
-                  ))}
-                </dd>
-              </div>
+              <Group gap="xs" mt="md">
+                {qr.tags.map((tag) => (
+                  <Badge key={tag} color="gray" variant="light" leftSection={<Icon name="tag" className="h-3 w-3" />}>
+                    {tag}
+                  </Badge>
+                ))}
+              </Group>
             ) : null}
-          </dl>
-        </section>
+          </Card>
 
-        <section className="space-y-4">
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <p className="ui-page-eyebrow">Analytics</p>
-              <h2 className="ui-heading mt-1">Scan analytics</h2>
-            </div>
-            <span className="ui-badge ui-badge-muted">Last 30 days</span>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <StatTile icon="scan" label="Total scans" value={summary.total} />
-            <StatTile icon="barChart" label="Last 7 days" value={summary.last7Days} />
-            <StatTile
-              icon="bolt"
-              label="Last scan"
-              value={summary.lastScanAt ? summary.lastScanAt.toLocaleDateString() : "No scans"}
-            />
-          </div>
+          <Box>
+            <Group justify="space-between" mb="md">
+              <Box>
+                <Text size="xs" fw={800} tt="uppercase" c="dimmed" lts="0.08em">
+                  Analytics
+                </Text>
+                <Title order={2} size="h3">
+                  Scan analytics
+                </Title>
+              </Box>
+              <Badge variant="light" color="gray">
+                Last 30 days
+              </Badge>
+            </Group>
 
-          <div className="ui-card p-4">
-            <p className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-[var(--muted)]">
-              <Icon name="barChart" className="h-3.5 w-3.5" />
-              Scans, last 30 days
-            </p>
-            <ScanTimeSeriesChart data={series} />
-          </div>
+            <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md" mb="md">
+              <StatTile icon="scan" label="Total scans" value={summary.total} />
+              <StatTile icon="barChart" label="Last 7 days" value={summary.last7Days} />
+              <StatTile icon="bolt" label="Last scan" value={summary.lastScanAt ? summary.lastScanAt.toLocaleDateString() : "No scans"} />
+            </SimpleGrid>
 
-          <div className="ui-card p-4">
-            <p className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-[var(--muted)]">
-              <Icon name="phone" className="h-3.5 w-3.5" />
-              Scans by device
-            </p>
-            {breakdown.length > 0 ? (
-              <DeviceBreakdownChart data={breakdown} />
-            ) : (
-              <p className="text-sm text-[var(--muted)]">No scans yet.</p>
-            )}
-          </div>
-        </section>
-      </div>
+            <Stack gap="md">
+              <Card p="md">
+                <Group gap="xs" mb="sm">
+                  <Icon name="barChart" className="h-4 w-4" />
+                  <Text size="sm" fw={700}>
+                    Scans, last 30 days
+                  </Text>
+                </Group>
+                <ScanTimeSeriesChart data={series} />
+              </Card>
 
-      <aside className="ui-card h-fit overflow-hidden p-5 xl:sticky xl:top-8">
-        <div className="mb-5 flex items-start justify-between gap-3">
-          <div>
-            <p className="ui-heading">Print proof</p>
-            <p className="mt-1 text-sm text-[var(--muted)]">Export exact assets for signs, flyers, or PDF packets.</p>
-          </div>
-          <span className="ui-badge ui-badge-gold">Ready</span>
-        </div>
-        <div className="ui-qr-stage flex justify-center p-6">
-          <QrPreview data={trackingUrl} style={style} size={220} />
-        </div>
-        <div className="mt-5">
-          <p className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-[var(--muted)]">
-            <Icon name="download" className="h-3.5 w-3.5" />
-            Export
-          </p>
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            <a
-              href={`/api/qr/${qr.id}/export?format=svg`}
-              className="ui-button ui-button-surface"
-            >
-              <Icon name="fileText" className="h-4 w-4" />
+              <Card p="md">
+                <Group gap="xs" mb="sm">
+                  <Icon name="phone" className="h-4 w-4" />
+                  <Text size="sm" fw={700}>
+                    Scans by device
+                  </Text>
+                </Group>
+                {breakdown.length > 0 ? <DeviceBreakdownChart data={breakdown} /> : <Text size="sm" c="dimmed">No scans yet.</Text>}
+              </Card>
+            </Stack>
+          </Box>
+        </Stack>
+      </Grid.Col>
+
+      <Grid.Col span={{ base: 12, xl: 4 }}>
+        <Card p="lg" className="sticky-panel">
+          <Group justify="space-between" mb="md">
+            <Box>
+              <Title order={3} size="h4">
+                Print proof
+              </Title>
+              <Text size="sm" c="dimmed">
+                Export exact assets for signs, flyers, or PDF packets.
+              </Text>
+            </Box>
+            <Badge color="blue" variant="light">
+              Ready
+            </Badge>
+          </Group>
+          <Box className="qr-stage">
+            <QrPreview data={trackingUrl} style={style} size={220} />
+          </Box>
+          <Code block mt="md" className="break-code">
+            {trackingUrl}
+          </Code>
+          <Divider my="md" />
+          <SimpleGrid cols={2} spacing="xs">
+            <Button component="a" href={`/api/qr/${qr.id}/export?format=svg`} variant="default" leftSection={<Icon name="fileText" className="h-4 w-4" />}>
               SVG
-            </a>
-            <a
-              href={`/api/qr/${qr.id}/export?format=png&size=512`}
-              className="ui-button ui-button-surface"
-            >
-              <Icon name="image" className="h-4 w-4" />
+            </Button>
+            <Button component="a" href={`/api/qr/${qr.id}/export?format=png&size=512`} variant="default" leftSection={<Icon name="image" className="h-4 w-4" />}>
               PNG 512
-            </a>
-            <a
-              href={`/api/qr/${qr.id}/export?format=png&size=1024`}
-              className="ui-button ui-button-surface"
-            >
-              <Icon name="image" className="h-4 w-4" />
+            </Button>
+            <Button component="a" href={`/api/qr/${qr.id}/export?format=png&size=1024`} variant="default" leftSection={<Icon name="image" className="h-4 w-4" />}>
               PNG 1024
-            </a>
-            <a
-              href={`/api/qr/${qr.id}/export?format=png&size=2048`}
-              className="ui-button ui-button-surface"
-            >
-              <Icon name="image" className="h-4 w-4" />
+            </Button>
+            <Button component="a" href={`/api/qr/${qr.id}/export?format=png&size=2048`} variant="default" leftSection={<Icon name="image" className="h-4 w-4" />}>
               PNG 2048
-            </a>
-            <a
-              href={`/api/qr/${qr.id}/export?format=pdf`}
-              className="ui-button ui-button-solid col-span-2"
-            >
-              <Icon name="download" className="h-4 w-4" />
+            </Button>
+            <Button component="a" href={`/api/qr/${qr.id}/export?format=pdf`} leftSection={<Icon name="download" className="h-4 w-4" />} className="span-2">
               PDF
-            </a>
-          </div>
-        </div>
-      </aside>
-    </div>
+            </Button>
+          </SimpleGrid>
+        </Card>
+      </Grid.Col>
+    </Grid>
   );
 }
 
 function DetailItem({ icon, label, value, wide = false, mono = false }: { icon: IconName; label: string; value: string; wide?: boolean; mono?: boolean }) {
   return (
-    <div className={wide ? "ui-card-subtle p-4 sm:col-span-2" : "ui-card-subtle p-4"}>
-      <dt className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-[var(--muted)]">
+    <PaperLike wide={wide}>
+      <Group gap="xs" mb={4}>
         <Icon name={icon} className="h-3.5 w-3.5" />
-        {label}
-      </dt>
-      <dd className={mono ? "mt-2 break-all font-mono text-xs text-[var(--foreground)]" : "mt-2 break-all font-semibold text-[var(--foreground)]"}>
+        <Text size="xs" fw={800} tt="uppercase" c="dimmed" lts="0.06em">
+          {label}
+        </Text>
+      </Group>
+      <Text size={mono ? "xs" : "sm"} fw={mono ? 500 : 700} className={mono ? "break-code" : undefined} ff={mono ? "monospace" : undefined}>
         {value}
-      </dd>
-    </div>
+      </Text>
+    </PaperLike>
   );
 }
 
 function StatTile({ icon, label, value }: { icon: IconName; label: string; value: string | number }) {
   return (
-    <div className="ui-metric-card">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--muted)]">{label}</p>
-          <p className="mt-2 text-2xl font-semibold tracking-[-0.035em] text-[var(--foreground)]">{value}</p>
-        </div>
-        <span className="ui-section-icon">
+    <Card p="md">
+      <Group justify="space-between" align="flex-start" wrap="nowrap">
+        <Box>
+          <Text size="xs" fw={800} tt="uppercase" c="dimmed" lts="0.06em">
+            {label}
+          </Text>
+          <Title order={3} mt={6}>
+            {value}
+          </Title>
+        </Box>
+        <ThemeIcon variant="light" color="blue" radius="md">
           <Icon name={icon} className="h-4 w-4" />
-        </span>
-      </div>
-    </div>
+        </ThemeIcon>
+      </Group>
+    </Card>
+  );
+}
+
+function PaperLike({ children, wide }: { children: React.ReactNode; wide?: boolean }) {
+  return (
+    <Box className={wide ? "detail-cell detail-cell-wide" : "detail-cell"}>
+      {children}
+    </Box>
   );
 }

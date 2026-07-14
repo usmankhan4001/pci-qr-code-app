@@ -33,7 +33,7 @@ export async function GET(request: Request, ctx: RouteContext<"/api/qr/[id]/expo
 
   const style = styleConfigSchema.parse(qr.styleConfig);
   const redirectBase = process.env.NEXT_PUBLIC_REDIRECT_BASE_URL ?? "";
-  const trackingUrl = `${redirectBase}/q/${qr.shortcode}`;
+  const trackingUrl = `${redirectBase}/q/${qr.slug}`;
   const filenameBase = qr.label.replace(/[^\w.-]+/g, "_");
 
   if (format === "svg") {

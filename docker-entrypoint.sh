@@ -88,5 +88,10 @@ else
   echo "Skipping seed: SEED_ADMIN_PASSWORD is not set."
 fi
 
+if [ -n "${R2_BACKUP_INTERVAL_HOURS:-}" ] && [ "${R2_BACKUP_INTERVAL_HOURS}" != "0" ]; then
+  echo "Starting R2 backup scheduler..."
+  /app/scripts/r2-backup-loop.sh &
+fi
+
 echo "Starting Next.js server..."
 exec gosu nextjs node server.js

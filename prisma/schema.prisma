@@ -98,6 +98,7 @@ model BrandTemplate {
 
 model QrCode {
   id              String   @id @default(cuid())
+  slug            String   @unique
   shortcode       String   @unique
   label           String
   type            QrType
@@ -119,6 +120,8 @@ model QrCode {
   scans Scan[]
 
   @@index([status])
+  @@index([type, status, createdAt])
+  @@index([createdAt])
   @@index([tags], type: Gin)
 }
 
@@ -134,4 +137,5 @@ model Scan {
   ipCity     String?
 
   @@index([qrCodeId, scannedAt])
+  @@index([scannedAt])
 }

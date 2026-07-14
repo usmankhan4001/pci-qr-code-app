@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { generateShortcode } from "@/lib/shortcode";
+import { resolveUniqueQrSlug } from "@/lib/qr-slug";
 
 export async function cloneQrCode(id: string): Promise<void> {
   const session = await auth();
@@ -12,10 +12,12 @@ export async function cloneQrCode(id: string): Promise<void> {
 
   const original = await prisma.qrCode.findUnique({ where: { id } });
   if (!original) return;
+  const cloneSlug = await resolveUniqueQrSlug(`${original.slug}-copy`);
 
   const clone = await prisma.qrCode.create({
     data: {
-      shortcode: generateShortcode(),
+      slug: cloneSlug,
+      shortcode: cloneSlug,
       label: `${original.label} (copy)`,
       type: original.type,
       contentConfig: original.contentConfig as object,

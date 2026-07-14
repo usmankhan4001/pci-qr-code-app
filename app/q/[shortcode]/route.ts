@@ -7,7 +7,9 @@ import { renderWifiLanding, renderTextLanding } from "@/lib/qr-landing";
 export async function GET(request: Request, ctx: RouteContext<"/q/[shortcode]">) {
   const { shortcode } = await ctx.params;
 
-  const qr = await prisma.qrCode.findUnique({ where: { shortcode } });
+  const qr = await prisma.qrCode.findFirst({
+    where: { OR: [{ slug: shortcode }, { shortcode }] },
+  });
 
   if (!qr || qr.status === "ARCHIVED") {
     return new NextResponse(

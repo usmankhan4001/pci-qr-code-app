@@ -6,6 +6,8 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { qrTypeValues, contentSchemas, buildDestinationValue, type QrTypeValue } from "@/lib/qr-content";
 import { styleConfigSchema } from "@/lib/qr-style";
+import { resolveUniqueQrSlug } from "@/lib/qr-slug";
+import { slugCandidateFromLabelOrUrl } from "@/lib/slug";
 
 export type EditQrState = { error?: string };
 
@@ -13,6 +15,7 @@ const baseSchema = z.object({
   id: z.string(),
   type: z.enum(qrTypeValues),
   label: z.string().min(1, "Label is required"),
+  slug: z.string().optional(),
   tags: z.string().optional(),
   brandTemplateId: z.string().optional(),
   foreground: z.string(),
@@ -34,7 +37,7 @@ export async function updateQrCode(
   if (!base.success) {
     return { error: base.error.issues[0]?.message ?? "Invalid input" };
   }
-  const { id, type, label, tags, brandTemplateId, ...styleFields } = base.data;
+  const { id, type, label, slug, tags, brandTemplateId, ...styleFields } = base.data;
 
   const style = styleConfigSchema.safeParse({
     foreground: styleFields.foreground,
@@ -55,10 +58,12 @@ export async function updateQrCode(
   }
 
   const destinationUrl = buildDestinationValue(type, contentParsed.data);
+  const finalSlug = await resolveUniqueQrSlug(slug || slugCandidateFromLabelOrUrl(label, destinationUrl), id);
 
   await prisma.qrCode.update({
     where: { id },
     data: {
+      slug: finalSlug,
       label,
       type,
       contentConfig: contentParsed.data,

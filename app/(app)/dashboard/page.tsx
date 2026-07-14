@@ -1,4 +1,21 @@
 import Link from "next/link";
+import {
+  ActionIcon,
+  Badge,
+  Box,
+  Button,
+  Card,
+  Code,
+  Group,
+  Paper,
+  Select,
+  SimpleGrid,
+  Stack,
+  Text,
+  TextInput,
+  ThemeIcon,
+  Title,
+} from "@mantine/core";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/app/generated/prisma/client";
 import { QrPreview } from "@/components/qr-preview";
@@ -14,11 +31,7 @@ type SearchParams = {
   status?: string;
 };
 
-export default async function DashboardPage({
-  searchParams,
-}: {
-  searchParams: Promise<SearchParams>;
-}) {
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const params = await searchParams;
   const status = params.status ?? "ACTIVE";
 
@@ -35,6 +48,7 @@ export default async function DashboardPage({
   if (params.q) {
     where.OR = [
       { label: { contains: params.q, mode: "insensitive" } },
+      { slug: { contains: params.q, mode: "insensitive" } },
       { shortcode: { contains: params.q, mode: "insensitive" } },
     ];
   }
@@ -43,11 +57,7 @@ export default async function DashboardPage({
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
   const [qrCodes, totalCodes, activeCodes, archivedCodes, scansLast30] = await Promise.all([
-    prisma.qrCode.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      take: 100,
-    }),
+    prisma.qrCode.findMany({ where, orderBy: { createdAt: "desc" }, take: 100 }),
     prisma.qrCode.count(),
     prisma.qrCode.count({ where: { status: "ACTIVE" } }),
     prisma.qrCode.count({ where: { status: "ARCHIVED" } }),
@@ -57,168 +67,176 @@ export default async function DashboardPage({
   const redirectBase = process.env.NEXT_PUBLIC_REDIRECT_BASE_URL ?? "";
 
   return (
-    <div className="ui-page-grid">
-      <section className="ui-page-header">
-        <div className="flex flex-col gap-6 p-5 sm:p-6 xl:flex-row xl:items-end xl:justify-between">
-          <div>
-            <p className="ui-page-eyebrow">QR library</p>
-            <h1 className="ui-title mt-2">Dynamic codes ready for print</h1>
-            <p className="ui-description mt-3 max-w-2xl">
-              Search active campaigns, clone proven layouts, and keep destinations editable after signs, flyers, and cards are already in market.
-            </p>
-          </div>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <span className="ui-badge ui-badge-gold justify-center">{qrCodes.length} shown</span>
-            <Link href="/qr/new" className="ui-button ui-button-solid">
-              <Icon name="plus" className="h-4 w-4" />
+    <Stack gap="lg">
+      <Card p="lg">
+        <Group justify="space-between" align="flex-start" gap="md">
+          <Box>
+            <Text size="xs" fw={800} tt="uppercase" c="dimmed" lts="0.08em">
+              QR library
+            </Text>
+            <Title order={1} size="h2" mt={4}>
+              Dynamic QR codes
+            </Title>
+            <Text c="dimmed" mt="xs" maw={760}>
+              Manage live QR assets, update destinations after print, and export readable tracking links for campaigns.
+            </Text>
+          </Box>
+          <Group gap="sm">
+            <Badge variant="light" color="gray">
+              {qrCodes.length} shown
+            </Badge>
+            <Button component={Link} href="/qr/new" leftSection={<Icon name="plus" className="h-4 w-4" />}>
               New QR code
-            </Link>
-          </div>
-        </div>
-      </section>
+            </Button>
+          </Group>
+        </Group>
+      </Card>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <SimpleGrid cols={{ base: 1, sm: 2, xl: 4 }} spacing="md">
         <MetricCard icon="qr" label="Total codes" value={totalCodes} detail="All campaigns" />
         <MetricCard icon="scan" label="Active" value={activeCodes} detail="Live and editable" />
         <MetricCard icon="archive" label="Archived" value={archivedCodes} detail="Hidden from active work" />
         <MetricCard icon="barChart" label="30-day scans" value={scansLast30} detail="Across every QR" />
-      </section>
+      </SimpleGrid>
 
-      <form method="get" className="ui-toolbar grid gap-3 p-3 sm:grid-cols-2 lg:grid-cols-[1.45fr_1fr_1fr_0.85fr_auto]">
-        <div className="ui-search-field sm:col-span-2 lg:col-span-1">
-          <Icon name="search" className="h-4 w-4" />
-          <input
-            type="text"
+      <Paper component="form" method="get" withBorder p="md" radius="lg">
+        <SimpleGrid cols={{ base: 1, md: 5 }} spacing="sm">
+          <TextInput
             name="q"
             defaultValue={params.q}
-            placeholder="Search by label or shortcode"
-            className="ui-input"
+            placeholder="Search label or slug"
+            leftSection={<Icon name="search" className="h-4 w-4" />}
           />
-        </div>
-        <select name="type" defaultValue={params.type ?? ""} className="ui-select">
-          <option value="">All types</option>
-          {qrTypeValues.map((t) => (
-            <option key={t} value={t}>
-              {t}
-            </option>
-          ))}
-        </select>
-        <input
-          type="text"
-          name="tag"
-          defaultValue={params.tag}
-          placeholder="Tag"
-          className="ui-input"
-        />
-        <select name="status" defaultValue={status} className="ui-select">
-          <option value="ACTIVE">Active</option>
-          <option value="ARCHIVED">Archived</option>
-          <option value="ALL">All</option>
-        </select>
-        <button type="submit" className="ui-button ui-button-surface">
-          <Icon name="filter" className="h-4 w-4" />
-          Filter
-        </button>
-      </form>
+          <Select
+            name="type"
+            defaultValue={params.type ?? ""}
+            data={[{ value: "", label: "All types" }, ...qrTypeValues.map((value) => ({ value, label: value }))]}
+          />
+          <TextInput name="tag" defaultValue={params.tag} placeholder="Tag" />
+          <Select
+            name="status"
+            defaultValue={status}
+            data={[
+              { value: "ACTIVE", label: "Active" },
+              { value: "ARCHIVED", label: "Archived" },
+              { value: "ALL", label: "All" },
+            ]}
+          />
+          <Button type="submit" variant="default" leftSection={<Icon name="filter" className="h-4 w-4" />}>
+            Filter
+          </Button>
+        </SimpleGrid>
+      </Paper>
 
-      <section className="grid gap-3">
+      <Stack gap="sm">
         {qrCodes.map((qr) => {
           const style = styleConfigSchema.parse(qr.styleConfig);
-          const trackingUrl = `${redirectBase}/q/${qr.shortcode}`;
+          const trackingUrl = `${redirectBase}/q/${qr.slug}`;
           return (
-            <article key={qr.id} className="ui-data-row p-3 sm:p-4">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
-                <div className="flex min-w-0 flex-1 items-center gap-4">
-                  <div className="ui-preview-pad flex h-20 w-20 shrink-0 items-center justify-center p-2">
-                    <QrPreview data={trackingUrl} style={style} size={56} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Link href={`/qr/${qr.id}`} className="truncate text-base font-bold tracking-[-0.02em] text-[var(--foreground)] hover:text-[var(--accent)]">
+            <Card key={qr.id} p="md">
+              <Group justify="space-between" gap="md" align="center">
+                <Group gap="md" wrap="nowrap" miw={0}>
+                  <Box className="qr-thumb">
+                    <QrPreview data={trackingUrl} style={style} size={58} />
+                  </Box>
+                  <Box miw={0}>
+                    <Group gap="xs" wrap="nowrap">
+                      <Text component={Link} href={`/qr/${qr.id}`} fw={700} c="dark.8" truncate className="plain-link">
                         {qr.label}
-                      </Link>
-                      <span className={qr.status === "ACTIVE" ? "ui-badge" : "ui-badge ui-badge-muted"}>
+                      </Text>
+                      <Badge size="sm" color={qr.status === "ACTIVE" ? "green" : "gray"} variant="light">
                         {qr.status.toLowerCase()}
-                      </span>
-                    </div>
-                    <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-[var(--muted)]">
-                      <span className="inline-flex items-center gap-1.5">
-                        <Icon name={typeIcon(qr.type)} className="h-4 w-4" />
-                        {qr.type}
-                      </span>
-                      <span className="inline-flex min-w-0 items-center gap-1.5 font-mono text-xs">
+                      </Badge>
+                    </Group>
+                    <Group gap="md" mt={6} c="dimmed" wrap="wrap">
+                      <Group gap={5} wrap="nowrap">
+                        <Icon name={typeIcon(qr.type)} className="h-3.5 w-3.5" />
+                        <Text size="sm">{qr.type}</Text>
+                      </Group>
+                      <Group gap={5} wrap="nowrap">
                         <Icon name="link" className="h-3.5 w-3.5" />
-                        {qr.shortcode}
-                      </span>
+                        <Code>{qr.slug}</Code>
+                      </Group>
                       {qr.tags.length > 0 ? (
-                        <span className="inline-flex min-w-0 items-center gap-1.5 truncate">
+                        <Group gap={5} wrap="nowrap">
                           <Icon name="tag" className="h-3.5 w-3.5" />
-                          {qr.tags.join(", ")}
-                        </span>
+                          <Text size="sm" truncate maw={280}>
+                            {qr.tags.join(", ")}
+                          </Text>
+                        </Group>
                       ) : null}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex flex-wrap items-center gap-1.5 lg:justify-end">
-                  <Link href={`/qr/${qr.id}`} className="ui-button ui-button-surface">
-                    <Icon name="externalLink" className="h-4 w-4" />
+                    </Group>
+                  </Box>
+                </Group>
+
+                <Group gap="xs" justify="flex-end">
+                  <Button component={Link} href={`/qr/${qr.id}`} variant="default" size="xs" leftSection={<Icon name="externalLink" className="h-3.5 w-3.5" />}>
                     Open
-                  </Link>
-                  <Link href={`/qr/${qr.id}/edit`} className="ui-icon-button" aria-label={`Edit ${qr.label}`}>
+                  </Button>
+                  <ActionIcon component={Link} href={`/qr/${qr.id}/edit`} variant="subtle" color="gray" aria-label={`Edit ${qr.label}`}>
                     <Icon name="edit" className="h-4 w-4" />
-                  </Link>
+                  </ActionIcon>
                   <form action={cloneQrCode.bind(null, qr.id)}>
-                    <button type="submit" className="ui-icon-button" aria-label={`Clone ${qr.label}`}>
+                    <ActionIcon type="submit" variant="subtle" color="gray" aria-label={`Clone ${qr.label}`}>
                       <Icon name="clone" className="h-4 w-4" />
-                    </button>
+                    </ActionIcon>
                   </form>
                   <form action={setQrStatus.bind(null, qr.id, qr.status === "ACTIVE" ? "ARCHIVED" : "ACTIVE")}>
-                    <button type="submit" className="ui-icon-button" aria-label={qr.status === "ACTIVE" ? `Archive ${qr.label}` : `Unarchive ${qr.label}`}>
+                    <ActionIcon type="submit" variant="subtle" color="gray" aria-label={qr.status === "ACTIVE" ? `Archive ${qr.label}` : `Unarchive ${qr.label}`}>
                       <Icon name="archive" className="h-4 w-4" />
-                    </button>
+                    </ActionIcon>
                   </form>
                   <form action={deleteQrCode.bind(null, qr.id)}>
-                    <button type="submit" className="ui-icon-button text-[var(--danger)] hover:bg-[var(--danger-soft)] hover:text-[var(--danger)]" aria-label={`Delete ${qr.label}`}>
+                    <ActionIcon type="submit" variant="subtle" color="red" aria-label={`Delete ${qr.label}`}>
                       <Icon name="trash" className="h-4 w-4" />
-                    </button>
+                    </ActionIcon>
                   </form>
-                </div>
-              </div>
-            </article>
+                </Group>
+              </Group>
+            </Card>
           );
         })}
         {qrCodes.length === 0 ? (
-          <div className="ui-empty">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+          <Paper withBorder p="xl" radius="lg" ta="center">
+            <ThemeIcon size="xl" radius="xl" variant="light" color="blue" mx="auto" mb="md">
               <Icon name="search" className="h-5 w-5" />
-            </div>
-            <p className="ui-heading">No QR codes found</p>
-            <p className="ui-description mt-2">Adjust the filters or create a new dynamic code.</p>
-            <Link href="/qr/new" className="ui-button ui-button-solid mt-5">
-              <Icon name="plus" className="h-4 w-4" />
+            </ThemeIcon>
+            <Title order={3} size="h4">
+              No QR codes found
+            </Title>
+            <Text c="dimmed" mt="xs">
+              Adjust the filters or create a new dynamic code.
+            </Text>
+            <Button component={Link} href="/qr/new" mt="md" leftSection={<Icon name="plus" className="h-4 w-4" />}>
               Create QR code
-            </Link>
-          </div>
+            </Button>
+          </Paper>
         ) : null}
-      </section>
-    </div>
+      </Stack>
+    </Stack>
   );
 }
 
 function MetricCard({ icon, label, value, detail }: { icon: IconName; label: string; value: string | number; detail: string }) {
   return (
-    <div className="ui-metric-card">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-semibold text-[var(--muted)]">{label}</p>
-          <p className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-[var(--foreground)]">{value}</p>
-          <p className="mt-1 text-xs font-medium text-[var(--muted)]">{detail}</p>
-        </div>
-        <span className="ui-section-icon">
+    <Card p="md">
+      <Group justify="space-between" align="flex-start" wrap="nowrap">
+        <Box>
+          <Text size="sm" c="dimmed" fw={600}>
+            {label}
+          </Text>
+          <Title order={2} mt={4}>
+            {value}
+          </Title>
+          <Text size="xs" c="dimmed" mt={2}>
+            {detail}
+          </Text>
+        </Box>
+        <ThemeIcon variant="light" color="blue" radius="md">
           <Icon name={icon} className="h-4 w-4" />
-        </span>
-      </div>
-    </div>
+        </ThemeIcon>
+      </Group>
+    </Card>
   );
 }
 

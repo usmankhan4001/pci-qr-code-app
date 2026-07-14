@@ -6,15 +6,16 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { qrTypeValues, contentSchemas, buildDestinationValue, type QrTypeValue } from "@/lib/qr-content";
 import { styleConfigSchema } from "@/lib/qr-style";
-import { generateShortcode } from "@/lib/shortcode";
+import { resolveUniqueQrSlug } from "@/lib/qr-slug";
+import { slugCandidateFromLabelOrUrl } from "@/lib/slug";
 
 export type CreateQrState = { error?: string };
 
 const baseSchema = z.object({
   type: z.enum(qrTypeValues),
   label: z.string().min(1, "Label is required"),
+  slug: z.string().optional(),
   tags: z.string().optional(),
-  shortcode: z.string().min(4).max(16),
   brandTemplateId: z.string().optional(),
   foreground: z.string(),
   background: z.string(),
@@ -35,7 +36,7 @@ export async function createQrCode(
   if (!base.success) {
     return { error: base.error.issues[0]?.message ?? "Invalid input" };
   }
-  const { type, label, tags, shortcode, brandTemplateId, ...styleFields } = base.data;
+  const { type, label, slug, tags, brandTemplateId, ...styleFields } = base.data;
 
   const style = styleConfigSchema.safeParse({
     foreground: styleFields.foreground,
@@ -56,13 +57,12 @@ export async function createQrCode(
   }
 
   const destinationUrl = buildDestinationValue(type, contentParsed.data);
-
-  const existing = await prisma.qrCode.findUnique({ where: { shortcode } });
-  const finalShortcode = existing ? generateShortcode() : shortcode;
+  const finalSlug = await resolveUniqueQrSlug(slug || slugCandidateFromLabelOrUrl(label, destinationUrl));
 
   const created = await prisma.qrCode.create({
     data: {
-      shortcode: finalShortcode,
+      slug: finalSlug,
+      shortcode: finalSlug,
       label,
       type,
       contentConfig: contentParsed.data,

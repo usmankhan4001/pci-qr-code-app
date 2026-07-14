@@ -48,7 +48,7 @@ function escapeWifi(value: string): string {
  * Renders the type-specific contentConfig into the raw value that would
  * traditionally be encoded directly into a QR (mailto:, tel:, vCard text,
  * WIFI: config string, or plain text). For URL this is just the URL itself.
- * The redirect handler (/q/[shortcode]) uses this to know how to respond:
+ * The redirect handler (/q/[slug]) uses this to know how to respond:
  * URL/EMAIL/PHONE get a 302 to this value, the rest get served as content
  * with an appropriate Content-Type.
  */

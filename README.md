@@ -7,7 +7,7 @@ track dynamic QR codes.
 
 - **Generation**: URL, vCard, Wi-Fi, plain text, email, and phone QR codes
 - **Branding**: colors, dot/corner styles, and logo overlay via reusable brand templates
-- **Dynamic + trackable**: every QR encodes a short `/q/{shortcode}` tracking link, so the
+- **Dynamic + trackable**: every QR encodes a readable `/q/{slug}` tracking link, so the
   destination can be edited after printing, and every scan is logged
 - **Library**: search/filter, tagging, clone, archive
 - **Analytics**: per-QR scan counts, a 30-day time series, and a device-type breakdown
@@ -38,11 +38,17 @@ Open http://localhost:3000 and sign in with the seed admin credentials
 
 - **Stack**: Next.js 16 (App Router) + Prisma 7 (via `@prisma/adapter-pg`) + Postgres + Auth.js v5 (Credentials, JWT sessions)
 - **Route protection**: `proxy.ts` (Next 16's renamed `middleware.ts`) gates `/dashboard`, `/qr`, `/templates`
-- **Dynamic redirect**: `app/q/[shortcode]/route.ts` — 302s for URL/email/phone types; serves a
+- **Dynamic redirect**: `app/q/[shortcode]/route.ts` — resolves readable slugs first and legacy
+  shortcodes second, 302s for URL/email/phone types, and serves a
   `.vcf` download for vCard; renders a small landing page for Wi-Fi/text (a QR pointing at a
   tracking link can't trigger the OS's native "join this network" prompt — that only fires when
   a camera scans a raw `WIFI:` string directly — so Wi-Fi QRs show credentials with a copy button
   instead)
+- **Readable public links**: new QR codes use meaningful slugs such as
+  `/q/damac-riverside-brochure`. Existing random shortcodes remain valid for already printed codes.
+  If a URL QR must show the original destination in the phone camera preview, encode the original
+  URL directly instead of the tracking link; that removes dynamic editing and scan analytics for
+  that QR.
 - **Server-side rendering/export**: `lib/qr-render.ts` uses `qr-code-styling` in jsdom mode, then
   `sharp` for PNG rasterization and `pdf-lib` for PDF. Logo images are read from disk and inlined
   as data URIs rather than fetched over the network from inside jsdom.
@@ -63,17 +69,41 @@ Prisma migrations, optionally seeds the first admin user, then starts the Next.j
    - `POSTGRES_DB`
    - `AUTH_SECRET` (`openssl rand -base64 32`)
    - `NEXT_PUBLIC_BASE_URL`
-   - `NEXT_PUBLIC_REDIRECT_BASE_URL`
-   - `SEED_ADMIN_EMAIL`
-   - `SEED_ADMIN_PASSWORD`
+    - `NEXT_PUBLIC_REDIRECT_BASE_URL`
+    - `SEED_ADMIN_EMAIL`
+    - `SEED_ADMIN_PASSWORD`
+    - Optional R2 backups: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`,
+      `R2_BUCKET`, `R2_PREFIX`, `R2_BACKUP_INTERVAL_HOURS`
 4. Expose container port `3000` in Dokploy.
 5. Mount persistent volumes at these paths:
    - `/var/lib/postgresql/data` for the bundled Postgres database
    - `/app/public/uploads` for uploaded brand-template logos
 6. Deploy. On startup the container initializes Postgres if needed, creates the app role/database,
-   runs `prisma migrate deploy`, runs the seed script when `SEED_ADMIN_PASSWORD` is set, then starts
-   the app. When `SEED_ADMIN_PASSWORD` is set, the seed script also updates the admin password for
-   `SEED_ADMIN_EMAIL`, so those values are the portal login.
+    runs `prisma migrate deploy`, runs the seed script when `SEED_ADMIN_PASSWORD` is set, then starts
+    the app. When `SEED_ADMIN_PASSWORD` is set, the seed script also updates the admin password for
+    `SEED_ADMIN_EMAIL`, so those values are the portal login.
+
+### Backups (Cloudflare R2)
+
+The runtime image includes `scripts/backup-r2.sh`. It creates a custom-format `pg_dump`, archives
+`/app/public/uploads`, writes a small manifest, and uploads all files to Cloudflare R2 using the
+S3-compatible API.
+
+Set `R2_BACKUP_INTERVAL_HOURS=24` (or another positive whole number) to run backups automatically
+inside the container after migrations complete. Set it to `0` or leave it empty to disable the
+loop and run backups manually from Dokploy/SSH:
+
+```bash
+docker exec <container> /app/scripts/backup-r2.sh
+```
+
+Restore database backup:
+
+```bash
+pg_restore --clean --if-exists --no-owner --no-acl -d "$DATABASE_URL" backup.dump
+```
+
+Restore uploaded logos by extracting the matching `*-uploads.tar.gz` archive into `/app/public`.
 
 ### Why the Dockerfile looks the way it does
 
@@ -84,6 +114,8 @@ Prisma migrations, optionally seeds the first admin user, then starts the Next.j
 - `postgresql` is installed in the runtime image because Dokploy deployment is intentionally
   single-container for this project. Keep `/var/lib/postgresql/data` mounted as a persistent volume
   or the database will be recreated on each redeploy.
+- `awscli` is installed in the runtime image only for Cloudflare R2 backups via the S3-compatible
+  endpoint. Backups are optional and require R2 env vars.
 - `openssl` is installed explicitly — Prisma's query engine can't auto-detect the OpenSSL version
   on a slim image otherwise and silently defaults to the wrong one.
 - The full `node_modules` from the `deps` stage is copied over Next's traced `.next/standalone`

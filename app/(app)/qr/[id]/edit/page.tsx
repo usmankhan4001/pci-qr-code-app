@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { Badge, Box, Card, Group, Stack, Text, Title } from "@mantine/core";
 import { prisma } from "@/lib/prisma";
 import { Icon } from "@/components/ui-icons";
 import { styleConfigSchema } from "@/lib/qr-style";
@@ -19,34 +20,33 @@ export default async function EditQrPage({ params }: { params: Promise<{ id: str
   const redirectBase = process.env.NEXT_PUBLIC_REDIRECT_BASE_URL ?? "";
 
   return (
-    <div className="ui-page-grid">
-      <section className="ui-page-header p-5 sm:p-6">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="ui-page-eyebrow">Edit QR</p>
-            <h1 className="ui-title mt-2">{qr.label}</h1>
-            <p className="ui-description mt-3 max-w-2xl">
-              Tracking link {redirectBase}/q/{qr.shortcode} stays the same, so printed codes keep working.
-            </p>
-          </div>
-          <div className="ui-soft-panel flex items-center gap-3 px-4 py-3">
-            <span className="ui-section-icon">
-              <Icon name="link" className="h-4 w-4" />
-            </span>
-            <div>
-              <p className="text-sm font-bold text-[var(--foreground)]">Shortcode locked</p>
-              <p className="font-mono text-xs text-[var(--muted)]">{qr.shortcode}</p>
-            </div>
-          </div>
-        </div>
-      </section>
+    <Stack gap="lg">
+      <Card p="lg">
+        <Group justify="space-between" align="flex-start" gap="md">
+          <Box>
+            <Text size="xs" fw={800} tt="uppercase" c="dimmed" lts="0.08em">
+              Edit QR
+            </Text>
+            <Title order={1} size="h2" mt={4}>
+              {qr.label}
+            </Title>
+            <Text c="dimmed" mt="xs" maw={760}>
+              Tracking link {redirectBase}/q/{qr.slug} is what new exports will encode. Legacy printed links still resolve through the old shortcode.
+            </Text>
+          </Box>
+          <Badge color="blue" variant="light" leftSection={<Icon name="link" className="h-3.5 w-3.5" />}>
+            {qr.slug}
+          </Badge>
+        </Group>
+      </Card>
       <EditForm
         qr={{
-          id: qr.id,
-          type: qr.type as QrTypeValue,
-          label: qr.label,
-          tags: qr.tags.join(", "),
-          shortcode: qr.shortcode,
+            id: qr.id,
+            type: qr.type as QrTypeValue,
+            label: qr.label,
+            slug: qr.slug,
+            tags: qr.tags.join(", "),
+            shortcode: qr.shortcode,
           brandTemplateId: qr.brandTemplateId,
           fields,
           style,
@@ -62,6 +62,6 @@ export default async function EditQrPage({ params }: { params: Promise<{ id: str
           isDefault: t.isDefault,
         }))}
       />
-    </div>
+    </Stack>
   );
 }

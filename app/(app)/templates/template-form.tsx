@@ -1,6 +1,22 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import {
+  Alert,
+  Button,
+  Card,
+  Checkbox,
+  ColorInput,
+  FileInput,
+  Group,
+  Select,
+  SimpleGrid,
+  Stack,
+  Text,
+  TextInput,
+  ThemeIcon,
+  Title,
+} from "@mantine/core";
 import { createBrandTemplate, type TemplateFormState } from "./actions";
 import { QrPreview } from "@/components/qr-preview";
 import { Icon } from "@/components/ui-icons";
@@ -17,8 +33,7 @@ export function TemplateForm() {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  async function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+  async function handleLogoChange(file: File | null) {
     if (!file) return;
     setUploading(true);
     try {
@@ -35,136 +50,97 @@ export function TemplateForm() {
   }
 
   return (
-    <div className="ui-card grid gap-6 p-5">
-      <form action={formAction} className="flex flex-col gap-4">
+    <Card p="lg">
+      <form action={formAction}>
         <input type="hidden" name="logoUrl" value={logoUrl ?? ""} />
+        <Stack gap="md">
+          <TextInput label="Name" name="name" required placeholder="PCI Standard" leftSection={<Icon name="tag" className="h-4 w-4" />} />
 
-        <div className="flex flex-col gap-1.5">
-          <label className="ui-label flex items-center gap-2">
-            <Icon name="tag" className="h-3.5 w-3.5" />
-            Name
-          </label>
-          <input
-            name="name"
-            required
-            className="ui-input"
-            placeholder="e.g. PCI Standard"
-          />
-        </div>
-
-        <div className="ui-soft-panel p-4">
-          <div className="mb-4 flex items-center gap-2">
-            <span className="ui-section-icon h-8 w-8">
-              <Icon name="palette" className="h-4 w-4" />
-            </span>
-            <p className="ui-heading">Color system</p>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="flex flex-col gap-1.5">
-              <label className="ui-label">Foreground</label>
-              <input
-                type="color"
+          <Card withBorder p="md" bg="gray.0">
+            <Group gap="xs" mb="md">
+              <ThemeIcon variant="light" color="blue" radius="md">
+                <Icon name="palette" className="h-4 w-4" />
+              </ThemeIcon>
+              <Title order={3} size="h5">
+                Color system
+              </Title>
+            </Group>
+            <SimpleGrid cols={{ base: 1, sm: 2 }}>
+              <ColorInput
+                label="Foreground"
                 name="foreground"
                 value={foreground}
-                onChange={(e) => setForeground(e.target.value)}
-                className="ui-color"
+                onChange={setForeground}
+                format="hex"
+                swatches={["#0B2545", "#123A63", "#1F4F85", "#000000", "#4F9A4D"]}
               />
-              <p className="font-mono text-xs text-[var(--muted)]">{foreground}</p>
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="ui-label">Background</label>
-              <input
-                type="color"
+              <ColorInput
+                label="Background"
                 name="background"
                 value={background}
-                onChange={(e) => setBackground(e.target.value)}
-                className="ui-color"
+                onChange={setBackground}
+                format="hex"
+                swatches={["#FFFFFF", "#F8FAFC", "#F6F8FB", "#FBF6EA"]}
               />
-              <p className="font-mono text-xs text-[var(--muted)]">{background}</p>
-            </div>
-          </div>
-        </div>
+            </SimpleGrid>
+          </Card>
 
-        <div className="ui-soft-panel p-4">
-          <div className="mb-4 flex items-center gap-2">
-            <span className="ui-section-icon h-8 w-8">
-              <Icon name="layers" className="h-4 w-4" />
-            </span>
-            <p className="ui-heading">Shape language</p>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="flex flex-col gap-1.5">
-              <label className="ui-label">Dot style</label>
-              <select
+          <Card withBorder p="md" bg="gray.0">
+            <Group gap="xs" mb="md">
+              <ThemeIcon variant="light" color="blue" radius="md">
+                <Icon name="layers" className="h-4 w-4" />
+              </ThemeIcon>
+              <Title order={3} size="h5">
+                Shape language
+              </Title>
+            </Group>
+            <SimpleGrid cols={{ base: 1, sm: 2 }}>
+              <Select
+                label="Dot style"
                 name="dotStyle"
                 value={dotStyle}
-                onChange={(e) => setDotStyle(e.target.value as StyleConfig["dotStyle"])}
-                className="ui-select"
-              >
-                {dotStyleValues.map((v) => (
-                  <option key={v} value={v}>
-                    {v}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="ui-label">Corner style</label>
-              <select
+                onChange={(value) => setDotStyle((value ?? "rounded") as StyleConfig["dotStyle"])}
+                data={dotStyleValues.map((value) => ({ value, label: value }))}
+              />
+              <Select
+                label="Corner style"
                 name="cornerStyle"
                 value={cornerStyle}
-                onChange={(e) => setCornerStyle(e.target.value as StyleConfig["cornerStyle"])}
-                className="ui-select"
-              >
-                {cornerStyleValues.map((v) => (
-                  <option key={v} value={v}>
-                    {v}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
+                onChange={(value) => setCornerStyle((value ?? "extra-rounded") as StyleConfig["cornerStyle"])}
+                data={cornerStyleValues.map((value) => ({ value, label: value }))}
+              />
+            </SimpleGrid>
+          </Card>
 
-        <div className="flex flex-col gap-1.5">
-          <label className="ui-label flex items-center gap-2">
-            <Icon name="image" className="h-3.5 w-3.5" />
-            Logo (optional)
-          </label>
-          <input
-            type="file"
+          <FileInput
+            label="Logo"
+            description="Optional. PNG, JPG, SVG, or WebP."
             accept="image/png,image/jpeg,image/svg+xml,image/webp"
             onChange={handleLogoChange}
-            className="ui-input file:mr-3 file:rounded-lg file:border-0 file:bg-[var(--accent-soft)] file:px-3 file:py-1.5 file:text-sm file:font-bold file:text-[var(--accent)]"
+            leftSection={<Icon name="image" className="h-4 w-4" />}
+            clearable
           />
-          {uploading ? <p className="text-xs text-[var(--muted)]">Uploading...</p> : null}
-        </div>
+          {uploading ? <Text size="xs" c="dimmed">Uploading...</Text> : null}
 
-        <label className="flex items-center gap-2 text-sm font-semibold text-[var(--muted-strong)]">
-          <input type="checkbox" name="isDefault" className="ui-checkbox" />
-          Make this the default template
-        </label>
+          <Checkbox name="isDefault" label="Make this the default template" />
 
-        {state.error ? <p className="rounded-xl bg-[var(--danger-soft)] px-3 py-2 text-sm font-semibold text-[var(--danger)]">{state.error}</p> : null}
-        {state.success ? <p className="text-sm font-medium text-[var(--success)]">Template saved.</p> : null}
+          {state.error ? <Alert color="red">{state.error}</Alert> : null}
+          {state.success ? <Alert color="green">Template saved.</Alert> : null}
 
-        <button
-          type="submit"
-          disabled={pending || uploading}
-          className="ui-button ui-button-solid mt-1"
-        >
-          <Icon name="sparkle" className="h-4 w-4" />
-          {pending ? "Saving..." : "Save template"}
-        </button>
+          <Button type="submit" loading={pending || uploading} leftSection={<Icon name="sparkle" className="h-4 w-4" />}>
+            Save template
+          </Button>
+        </Stack>
       </form>
 
-      <div className="ui-qr-stage flex flex-col items-center gap-3 p-5">
-        <p className="ui-label">Preview</p>
-        <QrPreview
-          data="https://pcirealestate.com"
-          style={{ foreground, background, dotStyle, cornerStyle, logoUrl, margin: 8 }}
-        />
-      </div>
-    </div>
+      <Card withBorder bg="gray.0" mt="lg" p="md">
+        <Stack align="center" gap="sm">
+          <Text size="sm" fw={700} c="dimmed">
+            Preview
+          </Text>
+          <QrPreview data="https://pcirealestate.com" style={{ foreground, background, dotStyle, cornerStyle, logoUrl, margin: 8 }} />
+        </Stack>
+      </Card>
+    </Card>
   );
 }

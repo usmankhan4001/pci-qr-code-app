@@ -36,7 +36,7 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libcairo2 libpango-1.0-0 libpangocairo-1.0-0 libjpeg62-turbo libgif7 librsvg2-2 openssl \
-    postgresql gosu \
+    postgresql gosu awscli ca-certificates \
   && rm -rf /var/lib/apt/lists/* \
   && groupadd --system --gid 1001 nodejs \
   && useradd --system --uid 1001 --gid nodejs nextjs
@@ -59,11 +59,12 @@ COPY --from=builder /app/app/generated ./app/generated
 # the Prisma query engine are actually present, at the cost of image size.
 COPY --from=deps /app/node_modules ./node_modules
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
+COPY scripts ./scripts
 
 RUN mkdir -p /app/public/uploads/logos /var/lib/postgresql/data /run/postgresql \
   && chown -R nextjs:nodejs /app \
   && chown -R postgres:postgres /var/lib/postgresql /run/postgresql \
-  && chmod +x /app/docker-entrypoint.sh
+  && chmod +x /app/docker-entrypoint.sh /app/scripts/*.sh
 
 EXPOSE 3000
 ENV PORT=3000
