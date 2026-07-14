@@ -1,7 +1,14 @@
 import Image from "next/image";
 import LoginForm from "./login-form";
+import { Icon, type IconName } from "@/components/ui-icons";
 import brandLogo from "../../../premierchoice brandign/Logo.webp";
 import coverImage from "../../../premierchoice brandign/premier_choice_international_cover.jpeg";
+
+const loginHighlights: Array<{ icon: IconName; text: string }> = [
+  { icon: "qr", text: "Dynamic short links stay editable after print" },
+  { icon: "palette", text: "PCI-approved templates keep exports on brand" },
+  { icon: "barChart", text: "Scan analytics show campaign response" },
+];
 
 export default async function LoginPage({
   searchParams,
@@ -12,9 +19,10 @@ export default async function LoginPage({
 
   return (
     <main className="grid min-h-screen place-items-center px-5 py-10">
-      <div className="grid w-full max-w-5xl overflow-hidden rounded-lg border border-[var(--border)] bg-white shadow-[var(--shadow-card)] lg:grid-cols-[1.05fr_0.95fr]">
+      <div className="grid w-full max-w-6xl overflow-hidden rounded-[1.25rem] border border-[var(--border)] bg-white shadow-[var(--shadow-float)] lg:grid-cols-[1.08fr_0.92fr]">
         <section className="relative hidden min-h-[35rem] overflow-hidden bg-[#0f3156] text-white lg:block">
-          <div className="absolute inset-0 opacity-[0.12] [background-image:linear-gradient(90deg,rgba(255,255,255,.28)_0_1px,transparent_1px)] [background-size:58px_58px]" />
+          <div className="absolute inset-0 opacity-[0.13] [background-image:linear-gradient(90deg,rgba(255,255,255,.28)_0_1px,transparent_1px)] [background-size:58px_58px]" />
+          <div className="absolute right-0 top-0 h-64 w-64 rounded-full bg-[var(--brand-gold)]/20 blur-3xl" />
           <div className="relative flex h-full flex-col justify-between p-10">
             <div>
               <div className="mb-10 inline-flex bg-black px-4 py-3">
@@ -27,12 +35,20 @@ export default async function LoginPage({
               <p className="mt-5 max-w-sm text-sm leading-6 text-white/72">
                 Create, govern, export, and measure branded QR assets for Premier Choice International property marketing.
               </p>
+              <div className="mt-8 grid max-w-md gap-3 text-sm text-white/78">
+                {loginHighlights.map(({ icon, text }) => (
+                  <div key={text} className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.07] px-3 py-2">
+                    <Icon name={icon} className="h-4 w-4 text-[var(--brand-gold)]" />
+                    <span>{text}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="overflow-hidden rounded-md border border-white/15 bg-white/[0.08]">
+            <div className="overflow-hidden rounded-2xl border border-white/15 bg-white/[0.08] p-2">
               <Image
                 src={coverImage}
                 alt="Premier Choice International property development skyline"
-                className="h-32 w-full object-cover"
+                className="h-36 w-full rounded-xl object-cover"
                 priority
               />
             </div>
