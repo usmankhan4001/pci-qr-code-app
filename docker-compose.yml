@@ -1,0 +1,25 @@
+services:
+  app:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_BASE_URL: "http://localhost:3001"
+        NEXT_PUBLIC_REDIRECT_BASE_URL: "http://localhost:3001"
+    ports:
+      - "3001:3000"
+    environment:
+      POSTGRES_USER: pciqr
+      POSTGRES_PASSWORD: pciqr_dev_pw
+      POSTGRES_DB: pci_qr
+      AUTH_SECRET: "dev-only-insecure-secret-change-me"
+      NEXT_PUBLIC_BASE_URL: "http://localhost:3001"
+      NEXT_PUBLIC_REDIRECT_BASE_URL: "http://localhost:3001"
+      SEED_ADMIN_EMAIL: "it-team@pcirealestate.com"
+      SEED_ADMIN_PASSWORD: "changeme123!"
+    volumes:
+      - app-db-data:/var/lib/postgresql/data
+      - uploads:/app/public/uploads
+
+volumes:
+  app-db-data:
+  uploads:
