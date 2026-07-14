@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   ActionIcon,
@@ -63,7 +62,7 @@ export function MantineShell({ children, email, signOutAction }: MantineShellPro
       {navItems.map((item) => (
         <NavLink
           key={item.href}
-          component={Link}
+          component="a"
           href={item.href}
           active={item.active(pathname)}
           label={item.label}
@@ -92,7 +91,7 @@ export function MantineShell({ children, email, signOutAction }: MantineShellPro
         <Group h="100%" px="lg" justify="space-between" wrap="nowrap">
           <Group gap="md" wrap="nowrap">
             <Burger opened={opened} onClick={toggle} hiddenFrom="md" size="sm" aria-label="Toggle navigation" />
-            <Link href="/dashboard" className="brand-link">
+            <a href="/dashboard" className="brand-link">
               <Box className="brand-logo-box">
                 <Image src={brandLogo} alt="Premier Choice International" className="brand-logo" priority />
               </Box>
@@ -104,7 +103,7 @@ export function MantineShell({ children, email, signOutAction }: MantineShellPro
                   Dynamic campaign assets
                 </Text>
               </Box>
-            </Link>
+            </a>
           </Group>
 
           <Group gap="sm" wrap="nowrap">
